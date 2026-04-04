@@ -37,6 +37,9 @@ Repository = "https://github.com/ywatanabe1989/scitex-gists"
 [project.entry-points."scitex_dev.docs"]
 scitex-gists = "scitex_gists"
 
+[project.entry-points."scitex_dev.skills"]
+scitex-gists = "scitex_gists"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/scitex_gists"]
 
