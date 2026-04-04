@@ -33,6 +33,7 @@ dev = [
 [project.urls]
 Homepage = "https://github.com/ywatanabe1989/scitex-gists"
 Repository = "https://github.com/ywatanabe1989/scitex-gists"
+Issues = "https://github.com/ywatanabe1989/scitex-gists/issues"
 
 [project.entry-points."scitex_dev.docs"]
 scitex-gists = "scitex_gists"
@@ -49,7 +50,7 @@ pythonpath = ["src"]
 
 [tool.ruff]
 target-version = "py310"
-line-length = 79
+line-length = 88
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
