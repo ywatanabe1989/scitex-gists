@@ -7,19 +7,46 @@ name = "scitex-gists"
 version = "0.1.0"
 description = "SigmaPlot macro conversion utilities for matplotlib"
 readme = "README.md"
-license = "MIT"
-requires-python = ">=3.8"
+license = "AGPL-3.0"
+requires-python = ">=3.10"
 authors = [
     { name = "Yusuke Watanabe" },
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Visualization",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
 ]
 
 [project.urls]
 Homepage = "https://github.com/ywatanabe1989/scitex-gists"
 Repository = "https://github.com/ywatanabe1989/scitex-gists"
+
+[project.entry-points."scitex_dev.docs"]
+scitex-gists = "scitex_gists"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/scitex_gists"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 79
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
