@@ -2,6 +2,15 @@
 
 SigmaPlot macro conversion utilities for matplotlib.
 
+> **Interfaces:** Python ⭐⭐⭐ (primary) · CLI — · MCP — · Skills ⭐ · Hook — · HTTP —
+
+## Problem and Solution
+
+
+| # | Problem | Solution |
+|---|---------|----------|
+| 1 | **SigmaPlot v12 macro files live outside version control** -- one lab machine has them, nobody else does | **Python prints the macro** -- `sigmacro_process_figure_s()` emits VB-style macro text; copy-paste into SigmaPlot editor; macros are now part of the repo |
+
 ## Installation
 
 ```bash
