@@ -2,9 +2,19 @@
 name: scitex-gists
 description: SigmaPlot v12 macro snippets as printable Python functions — for researchers who still format figures in SigmaPlot and want reproducible VB-style macros stashed in a Python environment. Public API (4 symbols, 2 pairs of snake_case + legacy camelCase aliases) — `sigmacro_process_figure_s()` / `SigMacro_processFigure_S()` (print a VB macro that applies SigmaPlot figure-processing defaults — axis/line widths, fonts, tick sizes), `sigmacro_to_blue()` / `SigMacro_toBlue()` (print a macro that recolors a SigmaPlot figure's series to a blue palette). Both functions emit macro text to stdout — copy-paste into SigmaPlot's macro editor. No CLI, no MCP tools, intentionally narrow. Drop-in replacement for maintaining VB `.sbm` macro files outside version control, stashing SigmaPlot formatting instructions in lab notebooks, or re-deriving figure style every time. Use whenever the user asks to "get the SigmaPlot figure-formatting macro", "print the VB macro for blue recolor", "auto-format a SigmaPlot figure", or mentions `scitex.gists`, SigMacro, SigmaPlot v12 automation.
 user-invocable: false
+primary_interface: python
+interfaces:
+  python: 3
+  cli: 0
+  mcp: 0
+  skills: 1
+  hook: 0
+  http: 0
 ---
 
 # scitex-gists
+
+> **Interfaces:** Python ⭐⭐⭐ (primary) · CLI — · MCP — · Skills ⭐ · Hook — · HTTP —
 
 Tiny utility package hosting SigmaPlot macro snippets as Python functions
 that `print` the macro text. Intended for researchers who still use

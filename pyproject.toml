@@ -24,6 +24,10 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+# Bare install is the full package; [all] is provided for ecosystem-wide
+# consistency so `pip install scitex-*[all]` works uniformly.
+all = []
+
 dev = [
     "scitex-dev",
     "pytest>=7.0",
