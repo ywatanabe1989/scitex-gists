@@ -10,6 +10,7 @@ interfaces:
   skills: 1
   hook: 0
   http: 0
+tags: [scitex-gists, scitex-package]
 ---
 
 # scitex-gists
