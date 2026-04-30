@@ -158,11 +158,14 @@ def test_output_is_valid_vba_structure():
         sigmacro_process_figure_s()
         output = fake_stdout.getvalue()
 
-        # Count opening and closing statements
-        sub_count = output.count("Sub ")
-        end_sub_count = output.count("End Sub")
-        function_count = output.count("Function ")
-        end_function_count = output.count("End Function")
+        # Count opening and closing statements using line-anchored regex
+        # (plain substring matches pick up comments like "' Function to...")
+        import re
+
+        sub_count = len(re.findall(r"(?m)^Sub ", output))
+        end_sub_count = len(re.findall(r"(?m)^End Sub\b", output))
+        function_count = len(re.findall(r"(?m)^Function ", output))
+        end_function_count = len(re.findall(r"(?m)^End Function\b", output))
 
         # Should have matching pairs
         assert sub_count == end_sub_count
