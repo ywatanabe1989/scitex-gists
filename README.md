@@ -67,7 +67,9 @@ editor.
 
 ## Part of SciTeX
 
-`scitex-gists` is part of [**SciTeX**](https://scitex.ai).
+`scitex-gists` is part of [**SciTeX**](https://scitex.ai). Install via
+the umbrella with `pip install scitex[gists]` to use as
+`scitex.gists` (Python).
 
 >Four Freedoms for Research
 >
