@@ -47,7 +47,7 @@ sigmacro_to_blue()            # prints the color macro
 
 ## 1 Interfaces
 
-<details>
+<details open>
 <summary><strong>Python API</strong></summary>
 
 <br>
