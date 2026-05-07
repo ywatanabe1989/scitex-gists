@@ -38,14 +38,20 @@
 pip install scitex-gists
 ```
 
-## Quick Start
+## Architecture
 
-```python
-from scitex_gists import sigmacro_process_figure_s, sigmacro_to_blue
-
-sigmacro_process_figure_s()   # prints the figure-processing macro
-sigmacro_to_blue()            # prints the color macro
 ```
+scitex_gists/
+├── __init__.py
+├── _SigMacro_processFigure_S.py  ← prints figure-processing VB macro
+├── _SigMacro_toBlue.py           ← prints color-tweak VB macro
+└── _skills/                      ← agent-facing skill pages
+```
+
+A two-function library: each `_SigMacro_*.py` module wraps a
+multi-line VB-style macro string and a `print()` helper. Adding a new
+macro = add a new `_SigMacro_<name>.py` and re-export from
+`__init__.py`.
 
 ## 1 Interfaces
 
@@ -66,6 +72,31 @@ clipboard or redirect to a file, then paste into the SigmaPlot macro
 editor.
 
 </details>
+
+## Demo
+
+```mermaid
+flowchart LR
+    A["python -c 'from scitex_gists import sigmacro_process_figure_s; sigmacro_process_figure_s()'"]
+        --> B["VB macro printed to stdout"]
+    B --> C["copy / pipe to clipboard"]
+    C --> D["paste into SigmaPlot v12<br/>macro editor"]
+    D --> E["run macro on figure"]
+```
+
+```bash
+$ python -c "from scitex_gists import sigmacro_to_blue; sigmacro_to_blue()" | pbcopy
+# now paste into the SigmaPlot macro editor and run
+```
+
+## Quick Start
+
+```python
+from scitex_gists import sigmacro_process_figure_s, sigmacro_to_blue
+
+sigmacro_process_figure_s()   # prints the figure-processing macro
+sigmacro_to_blue()            # prints the color macro
+```
 
 ## Part of SciTeX
 
