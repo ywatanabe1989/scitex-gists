@@ -9,7 +9,7 @@
 <p align="center"><b>SigmaPlot macro printers — version-controlled VB-style macros emitted from Python.</b></p>
 
 <p align="center">
-  <a href="https://scitex-gists.readthedocs.io/">Full Documentation</a> · <code>pip install scitex-gists</code>
+  <a href="https://scitex-gists.readthedocs.io/">Full Documentation</a> · <code>uv pip install scitex-gists[all]</code>
 </p>
 
 <!-- scitex-badges:start -->
