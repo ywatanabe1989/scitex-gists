@@ -1,0 +1,8 @@
+# scitex-dev configuration for scitex-gists.
+#
+# Whitelist top-level files that aren't in the default PS-103 baseline.
+# See: scitex-dev/.../_skills/general/02_package_01_project-structure-root.md
+audit:
+  root-whitelist:
+    files:
+      - codecov.yml  # Codecov configuration (CI coverage)

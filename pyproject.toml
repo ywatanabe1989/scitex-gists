@@ -25,9 +25,10 @@ classifiers = [
 
 [project.optional-dependencies]
 dev = [
-    "scitex-dev>=0.11.7",
+    "scitex-dev[cli-audit]>=0.11.7",
     "pytest>=7.0",
     "pytest-cov>=4.0",
+    "coverage>=7.0",  # subprocess-coverage wiring (tests/conftest.py)
 ]
 docs = [
     "sphinx>=7.0",
@@ -58,6 +59,11 @@ packages = ["src/scitex_gists"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.coverage.run]
+parallel = true
+source = ["scitex_gists"]
+concurrency = ["multiprocessing", "thread"]
 
 [tool.scitex-linter]
 library_dirs = ["src", "tests", "examples"]
