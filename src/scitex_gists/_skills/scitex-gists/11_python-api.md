@@ -1,7 +1,8 @@
 ---
-name: python-api
-description: scitex-gists — Python API — see file body for details.
-tags: [scitex-gists, scitex-package]
+description: |
+  [TOPIC] scitex-gists — Python API
+  [DETAILS] scitex-gists — Python API — see file body for details..
+tags: [scitex-gists-python-api]
 ---
 
 <!-- 02_python-api.md -->
