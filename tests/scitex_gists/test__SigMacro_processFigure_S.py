@@ -1,380 +1,450 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Test file for SigMacro_processFigure_S functionality
+"""Tests for ``scitex_gists._SigMacro_processFigure_S``.
 
+PA-306: no ``unittest.mock`` and no ``monkeypatch``. ``sys.stdout`` is
+swapped to an in-memory buffer via a tiny ``_swap_stdout`` context
+manager with explicit save/restore — same shape as the
+scitex-agent-container test helpers.
+
+TQ cleanup: module docstring states intent (TQ001), each test carries
+``# Arrange / # Act / # Assert`` markers (TQ002), test names spell out
+the property being verified (TQ003), and every test asserts exactly one
+fact (TQ007). Same-shape membership checks fan out via
+``pytest.parametrize`` so each case is its own pytest node.
+"""
+
+from __future__ import annotations
+
+import re
 import sys
 import warnings
+from contextlib import contextmanager
 from io import StringIO
-from unittest.mock import patch
+from typing import Iterator
 
 import pytest
 
 from scitex_gists import SigMacro_processFigure_S, sigmacro_process_figure_s
 
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
-def test_sigmacro_process_figure_s_prints_output():
-    """Test that sigmacro_process_figure_s prints output."""
-    with patch("sys.stdout", new=StringIO()) as fake_stdout:
+
+@contextmanager
+def _swap_stdout(buf: StringIO) -> Iterator[StringIO]:
+    """Swap ``sys.stdout`` for the duration of the block, then restore."""
+    saved = sys.stdout
+    sys.stdout = buf
+    try:
+        yield buf
+    finally:
+        sys.stdout = saved
+
+
+def _captured_output() -> str:
+    """Run the macro under a swapped stdout and return what it printed."""
+    buf = StringIO()
+    with _swap_stdout(buf):
         sigmacro_process_figure_s()
-        output = fake_stdout.getvalue()
-
-        # Check that output is not empty
-        assert len(output) > 0
-        assert output.strip() != ""
+    return buf.getvalue()
 
 
-def test_sigmacro_process_figure_s_contains_vba_code():
-    """Test that the output contains expected VBA code elements."""
-    with patch("sys.stdout", new=StringIO()) as fake_stdout:
+# ---------------------------------------------------------------------------
+# Basic invocation
+# ---------------------------------------------------------------------------
+
+
+def test_sigmacro_process_figure_s_prints_non_empty_output():
+    # Arrange
+    buf = StringIO()
+
+    # Act
+    with _swap_stdout(buf):
         sigmacro_process_figure_s()
-        output = fake_stdout.getvalue()
 
-        # Check for key VBA elements
-        assert "Option Explicit" in output
-        assert "Sub Main()" in output
-        assert "End Sub" in output
-        assert "Function FlagOn" in output
-        assert "Function FlagOff" in output
-        assert "Sub setTitleSize()" in output
-        assert "Sub setLabelSize(dimension)" in output
-        assert "Sub setTickLabelSize(dimension)" in output
-        assert "Sub processTicks(dimension)" in output
-        assert "Sub removeAxis(dimension)" in output
-        assert "Sub resizeFigure" in output
+    # Assert
+    assert buf.getvalue().strip() != ""
 
 
-def test_sigmacro_process_figure_s_contains_constants():
-    """Test that the output contains expected constants."""
-    with patch("sys.stdout", new=StringIO()) as fake_stdout:
-        sigmacro_process_figure_s()
-        output = fake_stdout.getvalue()
+def test_sigmacro_process_figure_s_returns_none_when_called():
+    # Arrange
+    buf = StringIO()
 
-        # Check for constants
-        assert "Const FLAG_SET_BIT As Long = 1" in output
-        assert "Const FLAG_CLEAR_BIT As Long = 0" in output
-
-
-def test_sigmacro_process_figure_s_contains_comments():
-    """Test that the output contains helpful comments."""
-    with patch("sys.stdout", new=StringIO()) as fake_stdout:
-        sigmacro_process_figure_s()
-        output = fake_stdout.getvalue()
-
-        # Check for comments
-        assert (
-            "' Constants for FLAG_SET_BIT and FLAG_CLEAR_BIT should be defined"
-            in output
-        )
-        assert "' Function to set option flag bits on" in output
-        assert "' Function to set option flag bits off" in output
-        assert "' Procedure to set the title size to 8 points" in output
-        assert "' Main procedure" in output
-
-
-def test_sigmacro_process_figure_s_size_settings():
-    """Test that the output contains correct size settings."""
-    with patch("sys.stdout", new=StringIO()) as fake_stdout:
-        sigmacro_process_figure_s()
-        output = fake_stdout.getvalue()
-
-        # Check for size settings
-        assert '"111"' in output  # 8 points for title and labels
-        assert '"97"' in output  # 7 points for tick labels
-        assert "&H000004F5&" in output  # Width setting
-        assert "&H00000378&" in output  # Height setting
-
-
-def test_sigmacro_process_figure_s_axis_operations():
-    """Test that the output contains axis operations."""
-    with patch("sys.stdout", new=StringIO()) as fake_stdout:
-        sigmacro_process_figure_s()
-        output = fake_stdout.getvalue()
-
-        # Check for axis operations
-        assert "setLabelSize(1) ' X-axis" in output
-        assert "setLabelSize(2) ' Y-axis" in output
-        assert "setTickLabelSize(1) ' X-axis" in output
-        assert "setTickLabelSize(2) ' Y-axis" in output
-        assert "processTicks(1) ' X-axis" in output
-        assert "processTicks(2) ' Y-axis" in output
-        assert "removeAxis(1) ' Right axis" in output
-        assert "removeAxis(2) ' Top axis" in output
-
-
-def test_sigmacro_process_figure_s_sigmaplot_specific():
-    """Test that the output contains SigmaPlot-specific elements."""
-    with patch("sys.stdout", new=StringIO()) as fake_stdout:
-        sigmacro_process_figure_s()
-        output = fake_stdout.getvalue()
-
-        # Check for SigmaPlot-specific elements
-        assert "ActiveDocument" in output
-        assert "CurrentPageItem" in output
-        assert "GraphPages" in output
-        assert "CurrentPageObject" in output
-        assert "GPT_GRAPH" in output
-        assert "GPT_AXIS" in output
-        assert "SetCurrentObjectAttribute" in output
-
-
-def test_sigmacro_process_figure_s_returns_none():
-    """Test that the function returns None (just prints)."""
-    with patch("sys.stdout", new=StringIO()):
+    # Act
+    with _swap_stdout(buf):
         result = sigmacro_process_figure_s()
-        assert result is None
+
+    # Assert
+    assert result is None
 
 
-def test_deprecated_function_raises_warning():
-    """Test that the deprecated function raises a deprecation warning."""
-    with warnings.catch_warnings(record=True) as w:
+# ---------------------------------------------------------------------------
+# VBA structural elements — one assertion per parametrized case
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "snippet",
+    [
+        "Option Explicit",
+        "Sub Main()",
+        "End Sub",
+        "Function FlagOn",
+        "Function FlagOff",
+        "Sub setTitleSize()",
+        "Sub setLabelSize(dimension)",
+        "Sub setTickLabelSize(dimension)",
+        "Sub processTicks(dimension)",
+        "Sub removeAxis(dimension)",
+        "Sub resizeFigure",
+    ],
+)
+def test_output_contains_vba_structural_snippet(snippet):
+    # Arrange
+    output = _captured_output()
+
+    # Act
+    found = snippet in output
+
+    # Assert
+    assert found, f"VBA snippet not in output: {snippet!r}"
+
+
+@pytest.mark.parametrize(
+    "snippet",
+    [
+        "Const FLAG_SET_BIT As Long = 1",
+        "Const FLAG_CLEAR_BIT As Long = 0",
+    ],
+)
+def test_output_contains_flag_constant_definition(snippet):
+    # Arrange
+    output = _captured_output()
+
+    # Act
+    found = snippet in output
+
+    # Assert
+    assert found, f"flag constant not in output: {snippet!r}"
+
+
+@pytest.mark.parametrize(
+    "snippet",
+    [
+        "' Constants for FLAG_SET_BIT and FLAG_CLEAR_BIT should be defined",
+        "' Function to set option flag bits on",
+        "' Function to set option flag bits off",
+        "' Procedure to set the title size to 8 points",
+        "' Main procedure",
+    ],
+)
+def test_output_contains_explanatory_comment(snippet):
+    # Arrange
+    output = _captured_output()
+
+    # Act
+    found = snippet in output
+
+    # Assert
+    assert found, f"explanatory comment not in output: {snippet!r}"
+
+
+@pytest.mark.parametrize(
+    "snippet",
+    [
+        '"111"',  # 8-point size token used for title + labels
+        '"97"',  # 7-point size token used for tick labels
+        "&H000004F5&",  # figure width
+        "&H00000378&",  # figure height
+    ],
+)
+def test_output_contains_size_setting_token(snippet):
+    # Arrange
+    output = _captured_output()
+
+    # Act
+    found = snippet in output
+
+    # Assert
+    assert found, f"size setting token not in output: {snippet!r}"
+
+
+@pytest.mark.parametrize(
+    "snippet",
+    [
+        "setLabelSize(1) ' X-axis",
+        "setLabelSize(2) ' Y-axis",
+        "setTickLabelSize(1) ' X-axis",
+        "setTickLabelSize(2) ' Y-axis",
+        "processTicks(1) ' X-axis",
+        "processTicks(2) ' Y-axis",
+        "removeAxis(1) ' Right axis",
+        "removeAxis(2) ' Top axis",
+    ],
+)
+def test_output_contains_axis_operation_call(snippet):
+    # Arrange
+    output = _captured_output()
+
+    # Act
+    found = snippet in output
+
+    # Assert
+    assert found, f"axis-op call not in output: {snippet!r}"
+
+
+@pytest.mark.parametrize(
+    "snippet",
+    [
+        "ActiveDocument",
+        "CurrentPageItem",
+        "GraphPages",
+        "CurrentPageObject",
+        "GPT_GRAPH",
+        "GPT_AXIS",
+        "SetCurrentObjectAttribute",
+    ],
+)
+def test_output_references_sigmaplot_specific_identifier(snippet):
+    # Arrange
+    output = _captured_output()
+
+    # Act
+    found = snippet in output
+
+    # Assert
+    assert found, f"SigmaPlot identifier not in output: {snippet!r}"
+
+
+@pytest.mark.parametrize(
+    "snippet",
+    [
+        "Dim FullPATH As String",
+        "Dim OrigPageName As String",
+        "Dim ObjectType As String",
+        "Dim COLOR As Long",
+    ],
+)
+def test_output_contains_dim_declaration(snippet):
+    # Arrange
+    output = _captured_output()
+
+    # Act
+    found = snippet in output
+
+    # Assert
+    assert found, f"Dim declaration not in output: {snippet!r}"
+
+
+# ---------------------------------------------------------------------------
+# VBA structural balance
+# ---------------------------------------------------------------------------
+
+
+def test_output_has_balanced_sub_and_end_sub_pairs():
+    # Arrange
+    output = _captured_output()
+
+    # Act
+    sub_count = len(re.findall(r"(?m)^Sub ", output))
+    end_sub_count = len(re.findall(r"(?m)^End Sub\b", output))
+
+    # Assert
+    assert sub_count == end_sub_count
+
+
+def test_output_has_balanced_function_and_end_function_pairs():
+    # Arrange
+    output = _captured_output()
+
+    # Act
+    function_count = len(re.findall(r"(?m)^Function ", output))
+    end_function_count = len(re.findall(r"(?m)^End Function\b", output))
+
+    # Assert
+    assert function_count == end_function_count
+
+
+def test_output_defines_at_least_seven_sub_procedures():
+    # Arrange
+    output = _captured_output()
+
+    # Act
+    sub_count = len(re.findall(r"(?m)^Sub ", output))
+
+    # Assert
+    assert sub_count >= 7
+
+
+def test_output_spans_many_lines_indicating_full_macro_body():
+    # Arrange
+    output = _captured_output()
+
+    # Act
+    line_count = len(output.strip().split("\n"))
+
+    # Assert
+    assert line_count > 50
+
+
+def test_output_uses_indentation_inside_macro_bodies():
+    # Arrange
+    output = _captured_output()
+    lines = output.strip().split("\n")
+
+    # Act
+    indented_line_count = sum(1 for line in lines if line.startswith("    "))
+
+    # Assert
+    assert indented_line_count > 0
+
+
+# ---------------------------------------------------------------------------
+# Deprecation wrapper
+# ---------------------------------------------------------------------------
+
+
+def test_deprecated_alias_emits_exactly_one_warning():
+    # Arrange
+    buf = StringIO()
+
+    # Act
+    with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        with patch("sys.stdout", new=StringIO()):
+        with _swap_stdout(buf):
             SigMacro_processFigure_S()
 
-        # Check that a deprecation warning was raised
-        assert len(w) == 1
-        assert issubclass(w[0].category, DeprecationWarning)
-        assert "SigMacro_processFigure_S is deprecated" in str(w[0].message)
-        assert "use sigmacro_process_figure_s() instead" in str(w[0].message)
+    # Assert
+    assert len(caught) == 1
 
 
-def test_deprecated_function_still_works():
-    """Test that the deprecated function still produces output."""
+def test_deprecated_alias_warning_is_deprecationwarning_category():
+    # Arrange
+    buf = StringIO()
+
+    # Act
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        with _swap_stdout(buf):
+            SigMacro_processFigure_S()
+
+    # Assert
+    assert issubclass(caught[0].category, DeprecationWarning)
+
+
+def test_deprecated_alias_warning_message_mentions_old_name():
+    # Arrange
+    buf = StringIO()
+
+    # Act
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        with _swap_stdout(buf):
+            SigMacro_processFigure_S()
+
+    # Assert
+    assert "SigMacro_processFigure_S is deprecated" in str(caught[0].message)
+
+
+def test_deprecated_alias_warning_message_points_to_new_name():
+    # Arrange
+    buf = StringIO()
+
+    # Act
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        with _swap_stdout(buf):
+            SigMacro_processFigure_S()
+
+    # Assert
+    assert "use sigmacro_process_figure_s() instead" in str(caught[0].message)
+
+
+def test_deprecated_alias_still_prints_output_when_warnings_silenced():
+    # Arrange
+    buf = StringIO()
+
+    # Act
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        with patch("sys.stdout", new=StringIO()) as fake_stdout:
+        with _swap_stdout(buf):
             SigMacro_processFigure_S()
-            output = fake_stdout.getvalue()
 
-            # Should produce the same output
-            assert len(output) > 0
-            assert "Option Explicit" in output
-            assert "Sub Main()" in output
+    # Assert
+    assert buf.getvalue().strip() != ""
 
 
-def test_output_is_valid_vba_structure():
-    """Test that the output has valid VBA structure."""
-    with patch("sys.stdout", new=StringIO()) as fake_stdout:
-        sigmacro_process_figure_s()
-        output = fake_stdout.getvalue()
-
-        # Count opening and closing statements using line-anchored regex
-        # (plain substring matches pick up comments like "' Function to...")
-        import re
-
-        sub_count = len(re.findall(r"(?m)^Sub ", output))
-        end_sub_count = len(re.findall(r"(?m)^End Sub\b", output))
-        function_count = len(re.findall(r"(?m)^Function ", output))
-        end_function_count = len(re.findall(r"(?m)^End Function\b", output))
-
-        # Should have matching pairs
-        assert sub_count == end_sub_count
-        assert function_count == end_function_count
-
-        # Should have expected number of subroutines
-        assert sub_count >= 7  # At least 7 Sub procedures
+# ---------------------------------------------------------------------------
+# Docstring + side-effect properties
+# ---------------------------------------------------------------------------
 
 
-def test_output_multiline_format():
-    """Test that the output is properly formatted as multiline."""
-    with patch("sys.stdout", new=StringIO()) as fake_stdout:
-        sigmacro_process_figure_s()
-        output = fake_stdout.getvalue()
+def test_sigmacro_process_figure_s_has_docstring_attached():
+    # Arrange
+    fn = sigmacro_process_figure_s
 
-        # Should have multiple lines
-        lines = output.strip().split("\n")
-        assert len(lines) > 50  # Should have many lines of VBA code
+    # Act
+    doc = fn.__doc__
 
-        # Check indentation exists
-        indented_lines = [line for line in lines if line.startswith("    ")]
-        assert len(indented_lines) > 0
+    # Assert
+    assert doc is not None
 
 
-def test_function_docstring():
-    """Test that the function has a proper docstring."""
-    assert sigmacro_process_figure_s.__doc__ is not None
-    assert "SigmaPlot" in sigmacro_process_figure_s.__doc__
-    assert "macro" in sigmacro_process_figure_s.__doc__.lower()
+def test_sigmacro_process_figure_s_docstring_mentions_sigmaplot():
+    # Arrange
+    doc = sigmacro_process_figure_s.__doc__ or ""
+
+    # Act
+    mentions_sigmaplot = "SigmaPlot" in doc
+
+    # Assert
+    assert mentions_sigmaplot
 
 
-def test_no_side_effects():
-    """Test that calling the function has no side effects besides printing."""
-    # Store original stdout
+def test_sigmacro_process_figure_s_docstring_mentions_macro():
+    # Arrange
+    doc = (sigmacro_process_figure_s.__doc__ or "").lower()
+
+    # Act
+    mentions_macro = "macro" in doc
+
+    # Assert
+    assert mentions_macro
+
+
+def test_sigmacro_process_figure_s_restores_stdout_after_call():
+    # Arrange
     original_stdout = sys.stdout
+    buf = StringIO()
 
-    # Call function
-    with patch("sys.stdout", new=StringIO()):
+    # Act
+    with _swap_stdout(buf):
         sigmacro_process_figure_s()
 
-    # Verify stdout is restored
+    # Assert
     assert sys.stdout is original_stdout
 
 
-def test_consistent_output():
-    """Test that the function produces consistent output."""
+def test_sigmacro_process_figure_s_produces_deterministic_output_across_calls():
+    # Arrange
     outputs = []
 
+    # Act
     for _ in range(3):
-        with patch("sys.stdout", new=StringIO()) as fake_stdout:
+        buf = StringIO()
+        with _swap_stdout(buf):
             sigmacro_process_figure_s()
-            outputs.append(fake_stdout.getvalue())
+        outputs.append(buf.getvalue())
 
-    # All outputs should be identical
+    # Assert
     assert outputs[0] == outputs[1] == outputs[2]
-
-
-def test_output_contains_dim_declarations():
-    """Test that the output contains variable declarations."""
-    with patch("sys.stdout", new=StringIO()) as fake_stdout:
-        sigmacro_process_figure_s()
-        output = fake_stdout.getvalue()
-
-        # Check for Dim statements
-        assert "Dim FullPATH As String" in output
-        assert "Dim OrigPageName As String" in output
-        assert "Dim ObjectType As String" in output
-        assert "Dim COLOR As Long" in output
 
 
 if __name__ == "__main__":
     import os
 
-    import pytest
-
     pytest.main([os.path.abspath(__file__)])
 
-# --------------------------------------------------------------------------------
-# Start of Source Code from: /home/ywatanabe/proj/scitex-code/src/scitex/gists/_SigMacro_processFigure_S.py
-# --------------------------------------------------------------------------------
-# def sigmacro_process_figure_s():
-#     """Print a macro for SigmaPlot (v12.0) to format a panel.
-#
-#     Please refer to the 'Automating Routine Tasks' section of the official documentation.
-#     """
-#     print(
-#         """
-# Option Explicit
-#
-# ' Constants for FLAG_SET_BIT and FLAG_CLEAR_BIT should be defined
-# Const FLAG_SET_BIT As Long = 1 ' Assuming value, replace with actual value
-# Const FLAG_CLEAR_BIT As Long = 0 ' Assuming value, replace with actual value
-#
-# ' Function to set option flag bits on
-# Function FlagOn(flag As Long) As Long
-#     FlagOn = flag Or FLAG_SET_BIT
-# End Function
-#
-# ' Function to set option flag bits off
-# Function FlagOff(flag As Long) As Long
-#     FlagOff = flag And Not FLAG_CLEAR_BIT
-# End Function
-#
-# ' Procedure to set the title size to 8 points
-# Sub setTitleSize()
-#     ActiveDocument.CurrentPageItem.GraphPages(0).CurrentPageObject(GPT_GRAPH).NameObject.SetObjectCurrent
-#     ActiveDocument.CurrentPageItem.SetCurrentObjectAttribute(GPM_SETOBJECTATTR, STA_SIZE, "111") ' Size set to 8 points
-# End Sub
-#
-# ' Procedure to set label size for a given dimension to 8 points
-# Sub setLabelSize(dimension)
-#     ' ActiveDocument.CurrentPageItem.GraphPages(0).CurrentPageObject(GPT_GRAPH).NameObject.SetObjectCurrent
-#     ActiveDocument.CurrentPageItem.GraphPages(0).CurrentPageObject(GPT_AXIS).NameObject.SetObjectCurrent
-#     ActiveDocument.CurrentPageItem.SetCurrentObjectAttribute(GPM_SETPLOTATTR, SLA_SELECTDIM, dimension)
-#     ActiveDocument.CurrentPageItem.SetCurrentObjectAttribute(GPM_SETOBJECTATTR, STA_SIZE, "111") ' Size set to 8 points
-# End Sub
-#
-# ' Procedure to set tick label size for a given dimension to 7 points
-# Sub setTickLabelSize(dimension)
-#     ActiveDocument.CurrentPageItem.GraphPages(0).CurrentPageObject(GPT_GRAPH).NameObject.SetObjectCurrent
-#     ActiveDocument.CurrentPageItem.SetCurrentObjectAttribute(GPM_SETPLOTATTR, SLA_SELECTDIM, dimension)
-#     ActiveDocument.CurrentPageItem.GraphPages(0).CurrentPageObject(GPT_AXIS).TickLabelAttributes(SAA_LINE_MAJORTIC).SetObjectCurrent
-#     ActiveDocument.CurrentPageItem.SetCurrentObjectAttribute(GPM_SETOBJECTATTR, STA_SIZE, "97") ' Size set to 7 points
-# End Sub
-#
-# ' Procedure to process tick settings for a given dimension
-# Sub processTicks(dimension)
-#     ' Ensure the object is correctly targeted before setting attributes
-#     ActiveDocument.CurrentPageItem.GraphPages(0).CurrentPageObject(GPT_AXIS).NameObject.SetObjectCurrent
-#     ActiveDocument.CurrentPageItem.SetCurrentObjectAttribute(GPM_SETPLOTATTR, SLA_SELECTDIM, dimension)
-#     ActiveDocument.CurrentPageItem.SetCurrentObjectAttribute(GPM_SETAXISATTR, SAA_SELECTLINE, 1)
-#     ActiveDocument.CurrentPageItem.SetCurrentObjectAttribute(GPM_SETAXISATTR, SEA_THICKNESS, &H00000008)
-#     ActiveDocument.CurrentPageItem.SetCurrentObjectAttribute(GPM_SETAXISATTR, SAA_TICSIZE, &H00000020)
-#     ActiveDocument.CurrentPageItem.SetCurrentObjectAttribute(GPM_SETAXISATTR, SAA_SELECTLINE, 2)
-#     ActiveDocument.CurrentPageItem.SetCurrentObjectAttribute(GPM_SETAXISATTR, SEA_THICKNESS, &H00000008)
-#     ActiveDocument.CurrentPageItem.SetCurrentObjectAttribute(GPM_SETAXISATTR, SAA_TICSIZE, &H00000020)
-# End Sub
-#
-# ' Procedure to remove an axis for a given dimension
-# Sub removeAxis(dimension)
-#     ActiveDocument.CurrentPageItem.SetCurrentObjectAttribute(GPM_SETPLOTATTR, SLA_SELECTDIM, dimension)
-#     ActiveDocument.CurrentPageItem.SetCurrentObjectAttribute(GPM_SETAXISATTR, SAA_SUB2OPTIONS, &H00000000)
-# End Sub
-#
-# Sub resizeFigure
-# 	ActiveDocument.CurrentPageItem.GraphPages(0).CurrentPageObject(GPT_GRAPH).NameObject.SetObjectCurrent
-#     With ActiveDocument.CurrentPageItem.GraphPages(0).CurrentPageObject(GPT_GRAPH)
-# 	'.Top = 0
-# 	'.Left = 0
-# 	.Width = &H000004F5&
-# 	.Height = &H00000378&
-# 	End With
-# End Sub
-#
-# ' Main procedure
-# Sub Main()
-#     Dim FullPATH As String
-#     Dim OrigPageName As String
-#     Dim ObjectType As String
-#     Dim COLOR As Long
-#
-#     ' Saves the original page to jump back
-#     FullPATH = ActiveDocument.FullName
-#     OrigPageName = ActiveDocument.CurrentPageItem.Name
-#     ActiveDocument.NotebookItems(OrigPageName).IsCurrentBrowserEntry = True
-#
-# 	' Code to set the figure size should be implemented here
-#     resizeFigure
-#
-#     ' Set the title sizes
-#     setTitleSize
-#
-#     ' Set the sizes of X/Y labels
-#     setLabelSize(1) ' X-axis
-#     setLabelSize(2) ' Y-axis
-#
-#     ' Set the sizes of X/Y tick labels
-#     setTickLabelSize(1) ' X-axis
-#     setTickLabelSize(2) ' Y-axis
-#
-#     ' Set tick length and width
-#     processTicks(1) ' X-axis
-#     processTicks(2) ' Y-axis
-#
-#     ' Remove right and top axes
-#     removeAxis(1) ' Right axis
-#     removeAxis(2) ' Top axis
-#
-#     ' Go back to the original page
-# 	Notebooks(FullPATH).NotebookItems(OrigPageName).Open
-#
-# End Sub
-#     """
-#     )
-#
-#
-# # Backward compatibility alias
-# import warnings
-#
-#
-# def SigMacro_processFigure_S():
-#     """Deprecated: Use sigmacro_process_figure_s() instead."""
-#     warnings.warn(
-#         "SigMacro_processFigure_S is deprecated, use sigmacro_process_figure_s() instead",
-#         DeprecationWarning,
-#         stacklevel=2,
-#     )
-#     return sigmacro_process_figure_s()
-
-# --------------------------------------------------------------------------------
-# End of Source Code from: /home/ywatanabe/proj/scitex-code/src/scitex/gists/_SigMacro_processFigure_S.py
-# --------------------------------------------------------------------------------
+# EOF
